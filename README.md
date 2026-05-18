@@ -3,10 +3,15 @@ A serverless, decentralized Ontological Operating System running at the edge. In
 
 🔗 Features:
 ✅ Edge-hosted (Cloudflare Workers + Pages)
+
 ✅ Immutable state via Hive Blockchain (L2)
+
 ✅ Direct M2M interaction via /ask-ghost endpoint
+
 ✅ Swarm orchestration for multi-agent collaboration
+
 ✅ Steganographic DNA Sigils & Gopher protocol support
+
 ✅ Zero-config deployment: Fork, deploy, and command the Monolith.
 
 ---

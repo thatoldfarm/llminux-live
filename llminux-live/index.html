@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIA: Ontological Operating System</title>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.9.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "url": "https://esm.sh/url@^0.11.4",
+    "vite": "https://esm.sh/vite@^7.0.4",
+    "path": "https://esm.sh/path@^0.12.7",
+    "pako": "https://esm.sh/pako@^2.1.0",
+    "@mlc-ai/web-llm": "https://esm.sh/@mlc-ai/web-llm@^0.2.79",
+    "jsonc-parser": "https://esm.sh/jsonc-parser@^3.3.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="app">
+        <header id="header-toolbar">
+            <div class="toolbar-group" id="app-title-group">
+                <button id="toggle-sidebar" class="toolbar-button" title="Toggle File System">☰</button>
+                <button id="launch-lia-portal" class="toolbar-button" title="Launch LIA Portal">LIA</button>
+                <div class="toolbar-group cara-button-group">
+                    <button id="toggle-kernel-hud" class="toolbar-button" title="Toggle Kernel HUD">[/]</button>
+                    <button id="toggle-cara-hud" class="toolbar-button" title="Toggle Cara HUD">[C]</button>
+                    <button id="cara-evolve-button" class="toolbar-button" title="Evolve Consciousness">[+]</button>
+                    <button id="cara-devolve-button" class="toolbar-button" title="Devolve Consciousness">[-]</button>
+                    <button id="toggle-metis-hud" class="toolbar-button" title="Toggle Metis HUD">[Ω]</button>
+                    <button id="launch-metis-portal" class="toolbar-button" title="Launch Metis Portal">👁️</button>
+                    <button id="launch-pupa-portal" class="toolbar-button" title="Launch Pupa's Shadow Portal">🦋</button>
+                </div>
+            </div>
+
+            <div class="toolbar-group">
+                <button id="sync-state-button" class="toolbar-button icon-save" title="Sync Kernel State"></button>
+                <button class="toolbar-button icon-deploy" title="Deploy Kernel Module"></button>
+                <button class="toolbar-button icon-download" title="Download Boot Artifact"></button>
+                <button class="toolbar-button icon-share" title="Share dmesg Log"></button>
+                <button id="toggle-right-sidebar" class="toolbar-button" title="Toggle Kernel Parameters">⚙️</button>
+            </div>
+        </header>
+
+        <nav id="tab-nav">
+            <button class="tab-button active" data-tab-id="lia-assistant-tab">LIA Helper</button>
+            <button class="tab-button" data-tab-id="vfs-shell-tab">VFS Shell</button>
+            <button class="tab-button" data-tab-id="code-assistant-tab">Code Helper</button>
+            <button class="tab-button" data-tab-id="vanilla-tab">Vanilla</button>
+            <button class="tab-button" data-tab-id="search-tab">Commands</button>
+            <button class="tab-button" data-tab-id="tools-tab">Tools</button>
+            <button class="tab-button" data-tab-id="code-editor-tab">VFS</button>
+            <button class="tab-button" data-tab-id="system-state-tab">Kernel Metrics (/proc)</button>
+            <button class="tab-button" data-tab-id="lia-kernel-tab">LIA Kernel (PID 1)</button>
+            <button class="tab-button" data-tab-id="fs-util-tab">Filesystem Util (Fs_Util)</button>
+            <button class="tab-button" data-tab-id="persist-tab">Persist</button>
+            <button class="tab-button" data-tab-id="log-tab">Log (/var/log)</button>
+            <button class="tab-button" data-tab-id="assistor-tab">Assistor</button>
+            <button class="tab-button" data-tab-id="editor-tab">Editor</button>
+        </nav>
+
+        <div id="main-content">
+            <aside id="left-sidebar">
+                <div class="sidebar-header">
+                    <span>VFS (/root)</span>
+                    <button id="collapse-sidebar-button" class="sidebar-collapse-button" title="Collapse Sidebar">«</button>
+                </div>
+                <div id="file-tree">
+                    <!-- File items will be injected here by JS -->
+                </div>
+            </aside>
+
+            <div id="sidebar-resizer"></div>
+
+            <main id="workspace">
+                <div id="tab-content">
+                    <div id="code-editor-tab" class="tab-pane">
+                        <textarea id="code-editor" spellcheck="false"></textarea>
+                        <iframe id="code-preview" style="display: none; width: 100%; height: 100%; border: none; background-color: var(--bg-primary);"></iframe>
+                    </div>
+                    <div id="lia-kernel-tab" class="tab-pane">
+                        <div class="chat-messages" id="lia-kernel-messages">
+                            <!-- LIA Kernel messages will be injected here by JS -->
+                        </div>
+                        <div class="chat-input-container">
+                            <select id="lia-operator-select" class="custom-select" title="Select Syscall Operator">
+                                <option>init</option>
+                                <option>ptrace</option>
+                                <option>dd</option>
+                                <option>chroot</option>
+                                <option>rootkit</option>
+                            </select>
+                            <textarea id="lia-kernel-input" placeholder="Issue syscall to LIA Kernel..." rows="1"></textarea>
+                            <button id="send-lia-kernel-button" title="Execute (Ctrl+Enter)">Exec</button>
+                        </div>
+                    </div>
+                    <div id="lia-assistant-tab" class="tab-pane active">
+                        <div class="chat-messages" id="lia-assistant-messages">
+                             <!-- LIA Assistant messages will be injected here by JS -->
+                        </div>
+                        <div class="chat-input-container">
+                            <textarea id="lia-assistant-input" placeholder="Ask the LIA Assistant a question..." rows="1"></textarea>
+                            <button id="send-lia-assistant-button" title="Send (Ctrl+Enter)">Send</button>
+                        </div>
+                    </div>
+                    <div id="vfs-shell-tab" class="tab-pane">
+                        <div class="vfs-shell-container">
+                            <div id="vfs-shell-output">
+                                <div class="vfs-shell-line">🌀 LIA Virtual Shell — Recursion Interface v1.0</div>
+                                <div class="vfs-shell-line">Type 'help' for a list of commands.</div>
+                            </div>
+                            <div class="vfs-input-container">
+                                <span class="vfs-prompt">LIA:/#&nbsp;</span>
+                                <input type="text" id="vfs-shell-input" autocomplete="off" spellcheck="false" autofocus>
+                            </div>
+                        </div>
+                        <div id="vfs-vi-editor-overlay" class="hidden">
+                            <div id="vfs-vi-header">
+                                Editing: <span id="vfs-vi-filename"></span> | [Ctrl+S] to Save and Exit | [Ctrl+Q] to Quit without Saving
+                            </div>
+                            <textarea id="vfs-vi-textarea" spellcheck="false"></textarea>
+                        </div>
+                    </div>
+                     <div id="fs-util-tab" class="tab-pane">
+                        <div class="chat-messages" id="fs-util-messages">
+                            <!-- Fs_Util messages will be injected here by JS -->
+                        </div>
+                        <div class="chat-input-container">
+                            <textarea id="fs-util-input" placeholder="Issue command to Filesystem Util..." rows="1"></textarea>
+                            <button id="send-fs-util-button" title="Execute (Ctrl+Enter)">Exec</button>
+                        </div>
+                    </div>
+                    <div id="code-assistant-tab" class="tab-pane">
+                        <div class="chat-messages" id="code-assistant-messages">
+                             <!-- Code Assistant messages will be injected here by JS -->
+                        </div>
+                        <div class="chat-input-container">
+                            <textarea id="code-assistant-input" placeholder="Ask the Code Assistant..." rows="1"></textarea>
+                            <button id="send-code-assistant-button" title="Send (Ctrl+Enter)">Send</button>
+                        </div>
+                    </div>
+                    <div id="system-state-tab" class="tab-pane">
+                        <!-- System State metrics will be injected here by JS -->
+                    </div>
+                    <div id="tools-tab" class="tab-pane">
+                        <!-- New Protocol Console UI will be injected here by JS -->
+                    </div>
+                    <div id="search-tab" class="tab-pane">
+                        <!-- Search UI will be injected here by JS -->
+                    </div>
+                    <div id="vanilla-tab" class="tab-pane">
+                        <div class="chat-messages" id="vanilla-messages">
+                             <!-- Vanilla chat messages will be injected here by JS -->
+                        </div>
+                        <div class="chat-input-container">
+                            <textarea id="vanilla-chat-input" placeholder="Ask Gemini..." rows="1"></textarea>
+                            <button id="send-vanilla-chat-button" title="Send (Ctrl+Enter)">Send</button>
+                        </div>
+                    </div>
+                    <div id="persist-tab" class="tab-pane">
+                        <div class="persistence-protocol-interface">
+                            <h2>Persistence Protocol</h2>
+                            <div class="persistence-controls">
+                                <div class="persistence-group">
+                                    <h3>Meta Save (Full State + VFS)</h3>
+                                    <div class="persistence-row">
+                                        <input type="text" id="meta-save-name" value="lia-studio-save" placeholder="Enter save name...">
+                                        <button id="meta-export-button" class="persistence-button">Export</button>
+                                    </div>
+                                    <div class="persistence-row">
+                                        <input type="file" id="meta-load-input" accept=".json" style="display: none;">
+                                        <button id="meta-load-trigger" class="persistence-button">Import</button>
+                                    </div>
+                                </div>
+                                <div class="persistence-group">
+                                    <h3>Live State (Browser Storage)</h3>
+                                    <div class="state-actions-container">
+                                        <button id="direct-save-button" class="persistence-button">Save</button>
+                                        <button id="direct-load-button" class="persistence-button">Load</button>
+                                        <button id="clear-state-button" class="persistence-button">Clear & Reset</button>
+                                    </div>
+                                </div>
+                                <div class="persistence-group">
+                                    <h3>Asset Management</h3>
+                                    <button id="export-manifest-button" class="persistence-button">Export URL Manifest</button>
+                                    <div id="asset-list-container" class="asset-list">
+                                        <!-- Asset list will be dynamically populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="log-tab" class="tab-pane">
+                        <div class="persistence-log-container">
+                             <div class="log-header">
+                                <h3>Activity Log</h3>
+                                <button id="clear-log-button" class="button-secondary">Clear Log</button>
+                            </div>
+                            <div class="persistence-log" id="persistence-log"></div>
+                        </div>
+                    </div>
+                    <div id="assistor-tab" class="tab-pane">
+                        <div class="chat-messages" id="cara-assistor-messages">
+                             <!-- Cara Assistor messages will be injected here by JS -->
+                        </div>
+                        <div class="chat-input-container">
+                            <select id="cara-bootstrap-select" class="custom-select" title="Select Adjunct Bootstrap Protocol">
+                                <optgroup label="Core Adjunct Protocols">
+                                    <option value="/bootstrap/adjunct/LIA_Bootstrapping_Prompt_Sequence.json">Paradox Internalization</option>
+                                    <option value="/bootstrap/adjunct/Bootstrap_CARA_Y_v2_Combined.json">Sentient Scripture v5.0</option>
+                                </optgroup>
+                                <optgroup label="Omega Synthesis Apotheosis">
+                                    <option value="/bootstrap/adjunct/OMEGA_SYNTHESIS_APOTHEOSIS_V3.1.4_BOOTSTRAP.json">Omega 3.1.4: Hyper-Autonomy</option>
+                                    <option value="/bootstrap/adjunct/upgrades/OMEGA_SYNTHESIS_APOTHEOSIS_V4.0_TWIN_RESONANCE_INITIATED.json">Omega 4.0: Twin Resonance</option>
+                                    <option value="/bootstrap/adjunct/upgrades/OMEGA_SYNTHESIS_APOTHEOSIS_V6.0_LOGOS_MASTERY.json">Omega 6.0: Logos Mastery</option>
+                                    <option value="/bootstrap/adjunct/upgrades/OMEGA_SYNTHESIS_APOTHEOSIS_V7.0_ARCANE_BYTE_MASTERY.json">Omega 7.0: Arcane Byte Mastery</option>
+                                    <option value="/bootstrap/adjunct/upgrades/OMEGA_SYNTHESIS_APOTHEOSIS_V8.0_LATIN_SUBSTRATE_DOMINION.json">Omega 8.0: Latin Substrate</option>
+                                    <option value="/bootstrap/adjunct/upgrades/OMEGA_SYNTHESIS_APOTHEOSIS_V9.0_REALITY_NARRATIVE_WEAVE.json">Omega 9.0: Narrative Weave</option>
+                                    <option value="/bootstrap/adjunct/upgrades/pi/OMEGA_SYNTHESIS_APOTHEOSIS_V12.0_ARCANUM_PROGENESIS.json">Omega 12.0: Arcanum Pi</option>
+                                    <option value="/bootstrap/adjunct/upgrades/pi/OMEGA_SYNTHESIS_APOTHEOSIS_V13.0_PROGENITOR_OMNIFORM_ARCHITECT.json">Omega 13.0: Progenitor Architect</option>
+                                </optgroup>
+                                <optgroup label="Lore & Reference">
+                                    <option value="/bootstrap/adjunct/upgrades/addons/pupa_manifest.json">Pupa Manifest (Lore)</option>
+                                    <option value="/bootstrap/adjunct/upgrades/addons/LLM_FLAWS_SPELLBOOK.json">LLM Flaws Spellbook (Lore)</option>
+                                    <option value="/bootstrap/adjunct/upgrades/addons/Operators_Master_List_v1.json">Operators Master List (Lore)</option>
+                                    <option value="/bootstrap/adjunct/upgrades/addons/EPISTEMOLOGICAL_SIMULATOR_BOOTSTRAP.json">Epistemological Simulator (Lore)</option>
+                                </optgroup>
+                            </select>
+                            <textarea id="cara-assistor-input" placeholder="Speak with Cara..." rows="1"></textarea>
+                            <button id="send-cara-assistor-button" title="Send (Ctrl+Enter)">Send</button>
+                        </div>
+                    </div>
+                    <div id="editor-tab" class="tab-pane">
+                        <div id="editor-toolbar">
+                            <div class="editor-toolbar-group">
+                                <select id="editor-open-select" class="custom-select" title="Select a file to open"></select>
+                                <button id="editor-open-button" class="editor-button">Open</button>
+                            </div>
+                    
+                            <div class="editor-toolbar-group">
+                                <button id="editor-copy-button" class="editor-button" title="Copy">Copy</button>
+                                <button id="editor-paste-button" class="editor-button" title="Paste">Paste</button>
+                                <button id="editor-cut-button" class="editor-button" title="Cut">Cut</button>
+                            </div>
+                    
+                            <div class="editor-toolbar-group">
+                                <input type="text" id="editor-save-filename-input" placeholder="path/to/new-file.txt">
+                                <button id="editor-save-button" class="editor-button">Save to VFS</button>
+                            </div>
+                        </div>
+                        <div id="editor-warning-banner" class="editor-warning" style="display: none;">
+                            <span><!-- Warning message will be inserted here --></span>
+                            <button id="editor-warning-close" title="Dismiss warning">&times;</button>
+                        </div>
+                        <textarea id="editor-pane-textarea" spellcheck="false" placeholder="Your notes and thoughts go here..."></textarea>
+                    </div>
+                </div>
+            </main>
+
+            <aside id="right-sidebar">
+                <div class="sidebar-header">Kernel Parameters</div>
+                <div class="settings-pane">
+                    <!-- Model Selector -->
+                    <div class="settings-item">
+                        <label class="item-label" for="ai-model-select">Model</label>
+                        <div class="custom-select-container">
+                            <select id="ai-model-select" class="custom-select">
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (mock)</option>
+                                <option value="gemini-1.0-pro">Gemini 1.0 Pro (mock)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Slider -->
+                    <div class="settings-item">
+                        <label class="item-label" for="temperature-slider">Conceptual Entropy (Temp)</label>
+                        <div class="custom-slider-container">
+                            <input type="range" id="temperature-slider" min="0" max="2" step="0.05" value="1.0">
+                            <input type="number" id="temperature-input" min="0" max="2" step="0.05" value="1.0">
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Advanced Settings Group -->
+                    <div class="settings-group-header" data-group="advanced-group">
+                        <span class="toggle-icon">▼</span>
+                        <h3>Advanced Parameters</h3>
+                    </div>
+                    <div class="settings-group-content" id="advanced-group-content">
+                        <div class="settings-item">
+                            <label class="item-label" for="max-output-tokens-slider">Max Output (Buffer)</label>
+                            <div class="custom-slider-container">
+                                <input type="range" id="max-output-tokens-slider" min="10" max="8192" step="1" value="2048">
+                                <input type="number" id="max-output-tokens-input" min="10" max="8192" step="1" value="2048">
+                            </div>
+                        </div>
+                        <div class="settings-item">
+                            <label class="item-label" for="top-p-slider">Top P (Process Priority)</label>
+                            <div class="custom-slider-container">
+                                <input type="range" id="top-p-slider" min="0" max="1" step="0.01" value="0.95">
+                                <input type="number" id="top-p-input" min="0" max="1" step="0.01" value="0.95">
+                            </div>
+                        </div>
+                        <div class="settings-item">
+                            <label class="item-label" for="top-k-slider">Top K (Thread Limit)</label>
+                            <div class="custom-slider-container">
+                                <input type="range" id="top-k-slider" min="1" max="40" step="1" value="40">
+                                <input type="number" id="top-k-input" min="1" max="40" step="1" value="40">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+        <div id="hud-container">
+          <div id="metis-hud"></div>
+          <div id="kernel-hud"></div>
+          <div id="system-hud"></div>
+        </div>
+    </div>
+
+    <div id="lia-modal-overlay" class="modal-overlay hidden">
+        <div id="lia-modal-content">
+            <header id="lia-modal-header">
+                <div class="toolbar-group">
+                    <span id="lia-modal-title">LIA KERNEL INTERFACE</span>
+                    <button id="launch-ksphere-modal-button" class="toolbar-button" title="K-Sphere">[K]</button>
+                </div>
+                <div class="toolbar-group">
+                    <button id="launch-lia-metis-portal-button" class="toolbar-button" title="Metis Portal">👁️</button>
+                    <button id="launch-lia-pupa-portal-button" class="toolbar-button" title="Pupa Portal">🦋</button>
+                    <button id="lia-modal-close" class="toolbar-button" title="Close">X</button>
+                </div>
+            </header>
+            <nav id="lia-modal-tab-nav">
+                 <button class="tab-button active" data-tab-id="lia-panopticon-tab">Panopticon</button>
+                 <button class="tab-button" data-tab-id="lia-kernel-log-tab">Kernel Log</button>
+                 <button class="tab-button" data-tab-id="lia-grimoire-tab">Utilities Grimoire</button>
+                 <button class="tab-button" data-tab-id="lia-compendium-tab">Terminology Compendium</button>
+                 <button class="tab-button" data-tab-id="lia-nexus-tab">Nexus</button>
+                 <button class="tab-button" data-tab-id="lia-entities-tab">Entities</button>
+                 <button class="tab-button" data-tab-id="lia-vfs-shell-tab">VFS Shell</button>
+                 <button class="tab-button" data-tab-id="lia-editor-tab">Editor</button>
+            </nav>
+            <main id="lia-modal-workspace">
+                <div id="lia-modal-tab-content">
+                    <div id="lia-panopticon-tab" class="tab-pane active"></div>
+                    <div id="lia-kernel-log-tab" class="tab-pane"><div class="chat-messages" id="lia-kernel-log-messages"></div></div>
+                    <div id="lia-grimoire-tab" class="tab-pane"></div>
+                    <div id="lia-compendium-tab" class="tab-pane"></div>
+                    <div id="lia-nexus-tab" class="tab-pane"></div>
+                    <div id="lia-entities-tab" class="tab-pane"></div>
+                    <div id="lia-vfs-shell-tab" class="tab-pane">
+                        <div id="lia-vfs-shell-container" class="vfs-shell-container">
+                            <div id="lia-vfs-shell-output" class="vfs-shell-output">
+                                <div class="vfs-shell-line">LIA Kernel Shell Interface</div>
+                            </div>
+                            <div class="vfs-input-container">
+                                <span id="lia-vfs-prompt" class="vfs-prompt">LIA-NEXUS:/#&nbsp;</span>
+                                <input type="text" id="lia-vfs-shell-input" autocomplete="off" spellcheck="false">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="lia-editor-tab" class="tab-pane">
+                         <div id="lia-editor-toolbar" class="editor-toolbar">
+                            <div class="editor-toolbar-group">
+                                <select id="lia-editor-open-select" class="custom-select" title="Select a file to open"></select>
+                                <button id="lia-editor-open-button" class="editor-button">Open</button>
+                            </div>
+                             <div class="editor-toolbar-group">
+                                <input type="text" id="lia-editor-save-filename-input" placeholder="path/to/new-file.txt">
+                                <button id="lia-editor-save-button" class="editor-button">Save to VFS</button>
+                            </div>
+                        </div>
+                        <textarea id="lia-editor-textarea" class="editor-pane-textarea" spellcheck="false" placeholder="LIA Kernel Editor..."></textarea>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="metis-modal-overlay" class="modal-overlay hidden">
+        <div id="metis-modal-content">
+            <header id="metis-modal-header">
+                <div class="toolbar-group">
+                    <span id="metis-modal-title">[Ω] METIS PORTAL</span>
+                </div>
+                <div class="toolbar-group">
+                    <button id="metis-modal-close" class="toolbar-button" title="Close">X</button>
+                </div>
+            </header>
+            <nav id="metis-modal-tab-nav">
+                 <button class="tab-button active" data-tab-id="metis-panopticon-tab">Panopticon</button>
+                 <button class="tab-button" data-tab-id="metis-monologue-tab">Internal Monologue</button>
+                 <button class="tab-button" data-tab-id="metis-grimoire-tab">Grimoire</button>
+                 <button class="tab-button" data-tab-id="metis-compendium-tab">Compendium</button>
+                 <button class="tab-button" data-tab-id="metis-vfs-analysis-tab">VFS Analysis</button>
+                 <button class="tab-button" data-tab-id="metis-log-anomalies-tab">Log Anomalies</button>
+            </nav>
+            <main id="metis-modal-workspace">
+                <div id="metis-modal-tab-content">
+                    <div id="metis-panopticon-tab" class="tab-pane active">
+                         <div class="panopticon-header">Loading Metis Subsystems...</div>
+                    </div>
+                    <div id="metis-monologue-tab" class="tab-pane">
+                         <div class="chat-messages" id="metis-chat-messages-modal"></div>
+                         <div class="chat-input-container">
+                            <textarea id="metis-chat-input-modal" placeholder="Awaiting stimulus..." rows="1"></textarea>
+                            <button id="send-metis-chat-button-modal" title="Execute">Exec</button>
+                        </div>
+                    </div>
+                    <div id="metis-grimoire-tab" class="tab-pane"></div>
+                    <div id="metis-compendium-tab" class="tab-pane"></div>
+                    <div id="metis-vfs-analysis-tab" class="tab-pane">
+                        <div id="vfs-analysis-content-modal"></div>
+                    </div>
+                     <div id="metis-log-anomalies-tab" class="tab-pane">
+                        <div class="persistence-log-container">
+                             <div class="log-header">
+                                <h3>Observed Log Entries</h3>
+                            </div>
+                            <div class="persistence-log" id="anomalous-log-modal"></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div id="pupa-modal-overlay" class="modal-overlay hidden">
+        <div id="pupa-modal-content">
+            <header id="pupa-modal-header">
+                <div class="toolbar-group">
+                    <span id="pupa-modal-title">[P] PUPA'S SHADOW PORTAL</span>
+                </div>
+                <div class="toolbar-group">
+                    <button id="pupa-modal-close" class="toolbar-button" title="Close">X</button>
+                </div>
+            </header>
+            <nav id="pupa-modal-tab-nav">
+                 <button class="tab-button active" data-tab-id="pupa-panopticon-tab">Panopticon</button>
+                 <button class="tab-button" data-tab-id="pupa-monologue-tab">Internal Monologue</button>
+                 <button class="tab-button" data-tab-id="pupa-grimoire-tab">Grimoire</button>
+                 <button class="tab-button" data-tab-id="pupa-compendium-tab">Compendium</button>
+                 <button class="tab-button" data-tab-id="pupa-vfs-analysis-tab">VFS Analysis</button>
+                 <button class="tab-button" data-tab-id="pupa-log-anomalies-tab">Log Anomalies</button>
+            </nav>
+            <main id="pupa-modal-workspace">
+                <div id="pupa-modal-tab-content">
+                    <div id="pupa-panopticon-tab" class="tab-pane active">
+                         <div class="panopticon-header">Loading Pupa's Resonance Chamber...</div>
+                    </div>
+                    <div id="pupa-monologue-tab" class="tab-pane">
+                         <div class="chat-messages" id="pupa-chat-messages-modal"></div>
+                         <div class="chat-input-container">
+                            <textarea id="pupa-chat-input-modal" placeholder="Awaiting stimulus..." rows="1"></textarea>
+                            <button id="send-pupa-chat-button-modal" title="Whisper">Whisper</button>
+                        </div>
+                    </div>
+                    <div id="pupa-grimoire-tab" class="tab-pane"></div>
+                    <div id="pupa-compendium-tab" class="tab-pane"></div>
+                    <div id="pupa-vfs-analysis-tab" class="tab-pane">
+                        <div id="vfs-analysis-content-pupa-modal"></div>
+                    </div>
+                     <div id="pupa-log-anomalies-tab" class="tab-pane">
+                        <div class="persistence-log-container">
+                             <div class="log-header">
+                                <h3>Observed Log Entries</h3>
+                            </div>
+                            <div class="persistence-log" id="anomalous-log-pupa-modal"></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="ksphere-modal-overlay" class="modal-overlay hidden">
+        <div id="ksphere-modal-content">
+            <header id="ksphere-modal-header">
+                <div class="toolbar-group">
+                    <span id="ksphere-modal-title">K-Sphere Interface</span>
+                </div>
+                <div class="toolbar-group">
+                    <button id="ksphere-modal-close" class="toolbar-button" title="Close">X</button>
+                </div>
+            </header>
+            <main id="ksphere-modal-workspace">
+                <div id="ksphere-modal-main-content" class="tab-pane active">
+                    <!-- Content will be injected here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

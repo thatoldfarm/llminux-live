@@ -213,11 +213,6 @@ This method allows external scripts, automation pipelines, or other AI agents to
 
 ---
 
-## Summary
-By decoupling the inference engine from the graphical interface, you have created a completely static, highly secure, and highly scalable deployment. The frontend can be hosted anywhere (even IPFS), and the backend runs on serverless edge functions, ensuring total isolation of your credentials while enabling both human and machine accessibility.
-
----
-
 ***
 
 ```text
